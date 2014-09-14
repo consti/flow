@@ -60,7 +60,7 @@ var ASPECT_RATIO = 16 / 9;
 var PROJECTION_NEAR = 0.01;
 var PROJECTION_FAR = 10.0;
 
-var PROJECTION_FOV = (60 / 180) * Math.PI;
+var PROJECTION_FOV = (100 / 180) * Math.PI;
 
 var LIGHT_PROJECTION_LEFT = -5.0;
 var LIGHT_PROJECTION_RIGHT = 5.0;
@@ -74,25 +74,27 @@ var BASE_LIFETIME = 10;
 var MAX_ADDITIONAL_LIFETIME = 5;
 var OFFSET_RADIUS = 0.5;
 
-var CAMERA_DISTANCE = 2.2;
-var INITIAL_AZIMUTH = 0.6;
-var INITIAL_ELEVATION = 0.4;
+var CAMERA_DISTANCE = 1.0;
+var INITIAL_AZIMUTH = 0.1;
+var INITIAL_ELEVATION = 0.7;
 
-var MIN_ELEVATION = -0.1;
-var MAX_ELEVATION = Math.PI / 2.0;
+var MIN_ELEVATION = -0.3;
+var MAX_ELEVATION = Math.PI / 5.0;
 
-var CAMERA_ORBIT_POINT = [1.2, -0.3, 0.0];
+var CAMERA_ORBIT_POINT = [1.5, -0.3, 0.0];
 
 var CAMERA_SENSITIVITY = 0.005;
 
-var INITIAL_SPEED = 2;
-var INITIAL_TURBULENCE = 0.2;
+var INITIAL_SPEED = 0.5;
+var INITIAL_TURBULENCE = 0.15;
 
 var MAX_SPEED = 5;
 var MAX_TURBULENCE = 0.5;
 
 var HUE_INNER_RADIUS = 40;
 var HUE_OUTER_RADIUS = 70;
+
+var UI_VISIBLE = false;
 
 var UI_SATURATION = 0.75;
 var UI_VALUE = 0.75;
@@ -111,6 +113,10 @@ var HUE_HIGHLIGHTER_SATURATION = 1;
 var HUE_HIGHLIGHTER_VALUE = 0.75;
 
 var HUE_HIGHLIGHTER_LINE_WIDTH = 5;
+
+if (UI_VISIBLE == true) {
+  document.getElementById('gui').style.display = 'block';
+}
 
 var hasWebGLSupportWithExtensions = function (extensions) {
     var canvas = document.createElement('canvas');

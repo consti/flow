@@ -271,7 +271,7 @@ var OPACITY_VERTEX_SHADER_SOURCE = [
         'float projectedCornerX = dot(vec4(u_lightProjectionMatrix[0][0], u_lightProjectionMatrix[1][0], u_lightProjectionMatrix[2][0], u_lightProjectionMatrix[3][0]), corner);',
         'float projectedCornerW = dot(vec4(u_lightProjectionMatrix[0][3], u_lightProjectionMatrix[1][3], u_lightProjectionMatrix[2][3], u_lightProjectionMatrix[3][3]), corner);',
 
-        'gl_PointSize = u_screenWidth * 0.5 * projectedCornerX * 2.0 / projectedCornerW;',
+        'gl_PointSize = u_screenWidth * 0.2 * projectedCornerX * 1.0 / projectedCornerW;',
 
         'gl_Position = u_lightProjectionMatrix * vec4(viewSpacePosition, 1.0);',
     '}'
@@ -285,7 +285,7 @@ var OPACITY_FRAGMENT_SHADER_SOURCE = [
     'void main () {',
         'float distanceFromCenter = distance(gl_PointCoord.xy, vec2(0.5, 0.5));',
         'if (distanceFromCenter > 0.5) discard;',
-        'float alpha = clamp(1.0 - distanceFromCenter * 2.0, 0.0, 1.0) * u_particleAlpha;',
+        'float alpha = clamp(1.0 - distanceFromCenter * 2.0, 0.0, 2.0) * u_particleAlpha;',
 
         'gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);', //under operator requires this premultiplication
     '}'
@@ -370,60 +370,6 @@ var RESAMPLE_FRAGMENT_SHADER_SOURCE = [
     'uniform float u_offsetScale;',
 
     'void main () {',
-        'vec4 data = texture2D(u_particleTexture, v_coordinates);',
-        'vec4 offset = texture2D(u_offsetTexture, v_coordinates);',
-        'vec3 position = data.rgb + offset.rgb * u_offsetScale;',
-        'gl_FragColor = vec4(position, data.a);',
-    '}'
-].join('\n');
-
-var FLOOR_VERTEX_SHADER_SOURCE = [
-    'precision highp float;',
-
-    'attribute vec3 a_vertexPosition;',
-
-    'varying vec3 v_position;',
-
-    'uniform mat4 u_viewMatrix;',
-    'uniform mat4 u_projectionMatrix;',
-
-    'void main () {',
-        'v_position = a_vertexPosition;',
-        'gl_Position = u_projectionMatrix * u_viewMatrix * vec4(a_vertexPosition, 1.0);',
-    '}'
-].join('\n');
-
-var FLOOR_FRAGMENT_SHADER_SOURCE = [
-    'precision highp float;',
-
-    'varying vec3 v_position;',
-
-    'uniform sampler2D u_opacityTexture;',
-
-    'uniform mat4 u_lightViewProjectionMatrix;',
-
-    'void main () {',
-        'vec2 lightTextureCoordinates = vec2(u_lightViewProjectionMatrix * vec4(v_position, 1.0)) * 0.5 + 0.5;',
-        'float opacity = texture2D(u_opacityTexture, lightTextureCoordinates).a;',
-
-        'if (lightTextureCoordinates.x < 0.0 || lightTextureCoordinates.x > 1.0 || lightTextureCoordinates.y < 0.0 || lightTextureCoordinates.y > 1.0) {',
-            'opacity = 0.0;',
-        '}',
-
-        'gl_FragColor = vec4(0.0, 0.0, 0.0, opacity * 0.5);',
-    '}'
-].join('\n');
-
-var BACKGROUND_VERTEX_SHADER_SOURCE = [
-    'precision highp float;',
-
-    'attribute vec2 a_position;',
-
-    'varying vec2 v_position;',
-
-    'void main () {',
-        'v_position = a_position;',
-        'gl_Position = vec4(a_position, 0.0, 1.0);',
     '}'
 ].join('\n');
 
@@ -434,7 +380,7 @@ var BACKGROUND_FRAGMENT_SHADER_SOURCE = [
 
     'void main () {',
         'float dist = length(v_position);',
-        'gl_FragColor = vec4(vec3(1.0) - dist * ' + BACKGROUND_DISTANCE_SCALE.toFixed(8) + ', 1.0);',
+        'gl_FragColor = vec4(vec3(1.0) - dist * ' + BACKGROUND_DISTANCE_SCALE.toFixed(8) + ', 0);',
     '}'
 ].join('\n');
 
@@ -646,7 +592,7 @@ var Flow = function (canvas) {
 
     var projectionMatrix = makePerspectiveMatrix(new Float32Array(16), PROJECTION_FOV, ASPECT_RATIO, PROJECTION_NEAR, PROJECTION_FAR);
 
-    var lightViewMatrix = new Float32Array(16); 
+    var lightViewMatrix = new Float32Array(16);
     makeLookAtMatrix(lightViewMatrix, [0.0, 0.0, 0.0], LIGHT_DIRECTION, LIGHT_UP_VECTOR);
     var lightProjectionMatrix = makeOrthographicMatrix(new Float32Array(16), LIGHT_PROJECTION_LEFT, LIGHT_PROJECTION_RIGHT, LIGHT_PROJECTION_BOTTOM, LIGHT_PROJECTION_TOP, LIGHT_PROJECTION_NEAR, LIGHT_PROJECTION_FAR);
 
@@ -705,47 +651,36 @@ var Flow = function (canvas) {
 
     var opacityFramebuffer = buildFramebuffer(gl, opacityTexture);
 
-    var simulationProgramWrapper = buildProgramWrapper(gl, 
+    var simulationProgramWrapper = buildProgramWrapper(gl,
         buildShader(gl, gl.VERTEX_SHADER, SIMULATION_VERTEX_SHADER_SOURCE),
         buildShader(gl, gl.FRAGMENT_SHADER, SIMULATION_FRAGMENT_SHADER_SOURCE),
         { 'a_position': 0 }
     );
 
-    var renderingProgramWrapper = buildProgramWrapper(gl, 
+    var renderingProgramWrapper = buildProgramWrapper(gl,
         buildShader(gl, gl.VERTEX_SHADER, RENDERING_VERTEX_SHADER_SOURCE),
         buildShader(gl, gl.FRAGMENT_SHADER, RENDERING_FRAGMENT_SHADER_SOURCE),
         { 'a_textureCoordinates': 0 }
     );
 
-    var opacityProgramWrapper = buildProgramWrapper(gl, 
+    var opacityProgramWrapper = buildProgramWrapper(gl,
         buildShader(gl, gl.VERTEX_SHADER, OPACITY_VERTEX_SHADER_SOURCE),
         buildShader(gl, gl.FRAGMENT_SHADER, OPACITY_FRAGMENT_SHADER_SOURCE),
         { 'a_textureCoordinates': 0 }
     );
 
-    var sortProgramWrapper = buildProgramWrapper(gl, 
+    var sortProgramWrapper = buildProgramWrapper(gl,
         buildShader(gl, gl.VERTEX_SHADER, SORT_VERTEX_SHADER_SOURCE),
         buildShader(gl, gl.FRAGMENT_SHADER, SORT_FRAGMENT_SHADER_SOURCE),
         { 'a_position': 0 }
     );
 
-    var resampleProgramWrapper = buildProgramWrapper(gl, 
+    var resampleProgramWrapper = buildProgramWrapper(gl,
         buildShader(gl, gl.VERTEX_SHADER, RESAMPLE_VERTEX_SHADER_SOURCE),
         buildShader(gl, gl.FRAGMENT_SHADER, RESAMPLE_FRAGMENT_SHADER_SOURCE),
         { 'a_position': 0 }
     );
 
-    var floorProgramWrapper = buildProgramWrapper(gl,
-        buildShader(gl, gl.VERTEX_SHADER, FLOOR_VERTEX_SHADER_SOURCE),
-        buildShader(gl, gl.FRAGMENT_SHADER, FLOOR_FRAGMENT_SHADER_SOURCE),
-        { 'a_vertexPosition': 0}
-    );
-
-    var backgroundProgramWrapper = buildProgramWrapper(gl,
-        buildShader(gl, gl.VERTEX_SHADER, BACKGROUND_VERTEX_SHADER_SOURCE),
-        buildShader(gl, gl.FRAGMENT_SHADER, BACKGROUND_FRAGMENT_SHADER_SOURCE),
-        { 'a_position': 0}
-    );
 
     var fullscreenVertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, fullscreenVertexBuffer);
@@ -960,7 +895,7 @@ var Flow = function (canvas) {
             sortStage = -1;
             sortStepsLeft = totalSortSteps;
         }
-        
+
         for (var i = 0; i < (flippedThisFrame ? totalSortSteps : SORT_PASSES_PER_FRAME); ++i) {
             sortPass--;
             if (sortPass < 0) {
@@ -1040,7 +975,7 @@ var Flow = function (canvas) {
             gl.bindBuffer(gl.ARRAY_BUFFER, particleVertexBuffer);
             gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-            
+
             if (!flipped) {
                 gl.enable(gl.BLEND);
                 gl.blendEquation(gl.FUNC_ADD, gl.FUNC_ADD);
@@ -1087,18 +1022,11 @@ var Flow = function (canvas) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, canvas.width, canvas.height);
 
-        gl.useProgram(floorProgramWrapper.program);
 
         gl.enableVertexAttribArray(0);
         gl.bindBuffer(gl.ARRAY_BUFFER, floorVertexBuffer);
         gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
-        gl.uniformMatrix4fv(floorProgramWrapper.uniformLocations['u_viewMatrix'], false, camera.getViewMatrix());
-        gl.uniformMatrix4fv(floorProgramWrapper.uniformLocations['u_projectionMatrix'], false, projectionMatrix);
-
-        gl.uniformMatrix4fv(floorProgramWrapper.uniformLocations['u_lightViewProjectionMatrix'], false, lightViewProjectionMatrix);
-
-        gl.uniform1i(floorProgramWrapper.uniformLocations['u_opacityTexture'], 0);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, opacityTexture);
 
@@ -1113,8 +1041,6 @@ var Flow = function (canvas) {
         gl.enableVertexAttribArray(0);
         gl.bindBuffer(gl.ARRAY_BUFFER, fullscreenVertexBuffer);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-
-        gl.useProgram(backgroundProgramWrapper.program);
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 

@@ -1,6 +1,6 @@
 body {
     overflow: hidden;
-    background: rgb(230, 230, 230);
+    background: rgb(10, 10, 10);
 }
 
 #error {
@@ -28,6 +28,8 @@ body {
 }
 
 #gui {
+    display: none;
+    
     position: absolute;
     top: 20px;
     right: 20px;

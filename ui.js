@@ -1,10 +1,32 @@
 var HuePicker = function (canvas, changeCallback) {
     var context = canvas.getContext('2d');
-
-    var hue = 0.0; //in the range [0, 1]
+    var render = document.getElementById('render');
+    var hue = 0.1; //in the range [0, 1]
 
     changeCallback(hue);
 
+    var renderMousePressed = false;
+    render.addEventListener('mousedown', function(event){
+      renderMousePressed = true;
+    });
+
+    render.addEventListener('mouseup', function(event){
+      renderMousePressed = false;
+    });
+
+    document.addEventListener('mousemove', function (event) {
+      if (renderMousePressed) {
+        if (hue < 1.0) {
+          hue = hue + 0.001;
+        } else {
+          hue = 0.001;
+        }
+        changeCallback(hue);
+        redraw();
+
+      }
+    });
+    
     var spectrumCanvas = document.createElement('canvas');
     spectrumCanvas.width = canvas.width;
     spectrumCanvas.height = canvas.height;
@@ -66,8 +88,8 @@ var HuePicker = function (canvas, changeCallback) {
         return hue;
     };
 
-    var mousePressed = false;
 
+    var mousePressed = false;
     canvas.addEventListener('mousedown', function (event) {
         var mouseX = getMousePosition(event, canvas).x;
         var mouseY = getMousePosition(event, canvas).y;
@@ -82,9 +104,11 @@ var HuePicker = function (canvas, changeCallback) {
         }
     });
 
+
     document.addEventListener('mouseup', function (event) {
         mousePressed = false;
     });
+
 
     document.addEventListener('mousemove', function (event) {
         if (mousePressed) {
